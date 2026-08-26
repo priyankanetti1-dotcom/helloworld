@@ -1,0 +1,7 @@
+build/
+.venv/
+*.o
+*.d
+*.a
+cov-int/
+*.tgz

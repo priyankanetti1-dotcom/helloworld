@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_BIN: /depot/Python/Python-3.11.2/bin/python3
+  CONAN_VERSION: "2.22.0"
+  CONAN_PROFILE: ./conan/profiles/gcc13
+
+jobs:
+  build-and-test:
+    name: Conan build (GNU make) and gtest
+    runs-on: sre-agent
+
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v4
+
+      - name: Create Python virtualenv
+        run: |
+          set -eux
+          "$PYTHON_BIN" --version
+          "$PYTHON_BIN" -m venv "$GITHUB_WORKSPACE/.venv"
+          echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install Conan
+        run: |
+          set -eux
+          which python
+          python -m pip install --upgrade pip
+          python -m pip install "conan==$CONAN_VERSION"
+          conan --version
+
+      - name: Detect Conan profile
+        run: conan profile detect --force
+
+      # - name: Cache Conan packages
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.conan2/p
+      #     key: conan-${{ runner.os }}-${{ hashFiles('conanfile.py') }}
+      #     restore-keys: conan-${{ runner.os }}-
+
+      - name: Install dependencies (conan install)
+        run: conan install . --profile:all="$CONAN_PROFILE" --build=missing -o "&:run_tests=True"
+
+      - name: Build and run unit tests (conan build)
+        run: conan build . --profile:all="$CONAN_PROFILE" -o "&:run_tests=True"
+
+      - name: Run the application
+        run: ./build/bin/helloworld
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gtest-results
+          path: build/test-results.xml
+          if-no-files-found: warn
+
+  cleanup:
+    name: Clean up workspace
+    runs-on: sre-agent
+    needs: [build-and-test]
+    if: always()
+
+    steps:
+      - name: Remove workspace contents
+        shell: bash
+        run: |
+          shopt -s dotglob nullglob
+          rm -rf "${GITHUB_WORKSPACE:?}"/*
+          echo "workspace cleaned: $GITHUB_WORKSPACE"

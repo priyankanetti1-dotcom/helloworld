@@ -38,11 +38,14 @@ derives `GTEST_CPPFLAGS` / `GTEST_LDFLAGS` / `GTEST_LIBS` from it.
 ```sh
 pip install "conan>=2.0"
 conan install . --profile:all=./conan/profiles/gcc13 --build=missing
-conan build   . --profile:all=./conan/profiles/gcc13 -o "&:run_tests=True"
+conan build   . --profile:all=./conan/profiles/gcc13    # build only
+conan build   . --profile:all=./conan/profiles/gcc13 \
+  -o "&:run_build=False" -o "&:run_tests=True"          # tests only
 ```
 
-`conan build` runs `make build`, and additionally `make test` when the
-`run_tests` option is enabled (default `False`).
+`build()` is driven by two options: `run_build` (default `True`) runs
+`make build`, `run_tests` (default `False`) runs `make test`. Set them
+independently to build and test in separate steps.
 
 To reproduce the CI pipeline locally:
 

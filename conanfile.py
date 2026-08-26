@@ -12,8 +12,14 @@ class HelloWorldConan(ConanFile):
     license = "MIT"
 
     settings = "os", "arch", "compiler", "build_type"
-    options = {"run_tests": [True, False]}
-    default_options = {"run_tests": False}
+    options = {
+        "run_build": [True, False], 
+        "run_tests": [True, False]
+        }
+    default_options = {
+        "run_build": True, 
+        "run_tests": False
+        }
 
     exports_sources = "Makefile", "include/*", "src/*", "tests/*"
 
@@ -42,7 +48,8 @@ class HelloWorldConan(ConanFile):
     def build(self):
         jobs = os.cpu_count() or 1
         args = self._make_args()
-        self.run("make build -j{} {}".format(jobs, args), cwd=self.build_folder)
+        if self.options.run_build:
+            self.run("make build -j{} {}".format(jobs, args), cwd=self.build_folder)
         if self.options.run_tests:
             self.run(
                 'make test -j{} {} GTEST_FLAGS="--gtest_output=xml:build/test-results.xml"'.format(

@@ -49,12 +49,12 @@ step "Clean workspace"
 make distclean
 
 step "conan install"
-conan install . --profile:all="$CONAN_PROFILE" --build=missing -o "&:run_tests=$RUN_TESTS" \
+conan install . --profile:all="$CONAN_PROFILE" --build=missing \
   || fail "conan install failed"
 
-step "conan build (make build + gtest)"
-conan build . --profile:all="$CONAN_PROFILE" -o "&:run_tests=$RUN_TESTS"
-BUILD_STATUS=$?
+step "conan build (make build)"
+conan build . --profile:all="$CONAN_PROFILE" -o "&:run_build=True" -o "&:run_tests=False" \
+  || fail "conan build failed"
 
 step "Run the application"
 if [[ -x build/bin/helloworld ]]; then
@@ -63,13 +63,20 @@ else
   fail "build/bin/helloworld was not produced"
 fi
 
+TEST_STATUS=0
+if [[ "$RUN_TESTS" == "True" ]]; then
+  step "conan build (gtest only)"
+  conan build . --profile:all="$CONAN_PROFILE" -o "&:run_build=False" -o "&:run_tests=True"
+  TEST_STATUS=$?
+fi
+
 step "Summary"
 if [[ -f build/test-results.xml ]]; then
   echo "test report: build/test-results.xml"
   grep -o 'tests="[0-9]*" failures="[0-9]*"' build/test-results.xml | head -1
 fi
 
-if [[ $BUILD_STATUS -ne 0 ]]; then
-  printf '\033[1;33mconan build exited %d (expected while the seeded bugs are unfixed)\033[0m\n' "$BUILD_STATUS"
+if [[ $TEST_STATUS -ne 0 ]]; then
+  printf '\033[1;33munit tests exited %d (expected while the seeded bugs are unfixed)\033[0m\n' "$TEST_STATUS"
 fi
-exit $BUILD_STATUS
+exit $TEST_STATUS

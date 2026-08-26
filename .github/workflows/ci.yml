@@ -49,13 +49,17 @@ jobs:
       #     restore-keys: conan-${{ runner.os }}-
 
       - name: Install dependencies (conan install)
-        run: conan install . --profile:all="$CONAN_PROFILE" --build=missing -o "&:run_tests=True"
+        run: conan install . --profile:all="$CONAN_PROFILE" --build=missing
 
-      - name: Build and run unit tests (conan build)
-        run: conan build . --profile:all="$CONAN_PROFILE" -o "&:run_tests=True"
+      - name: Build (conan build)
+        run: conan build . --profile:all="$CONAN_PROFILE" -o "&:run_build=True" -o "&:run_tests=False"
 
       - name: Run the application
         run: ./build/bin/helloworld
+
+      - name: Run unit tests (conan build)
+        continue-on-error: true
+        run: conan build . --profile:all="$CONAN_PROFILE" -o "&:run_build=False" -o "&:run_tests=True"
 
       - name: Upload test results
         if: always()

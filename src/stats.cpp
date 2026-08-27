@@ -5,11 +5,14 @@
 namespace helloworld {
 
 int mean(const std::vector<int>& values) {
+  if (values.empty()) {
+    return 0;
+  }
+
   int sum = 0;
   for (int v : values) {
     sum += v;
   }
-  // Coverity DIVIDE_BY_ZERO: `values` may be empty.
   return sum / static_cast<int>(values.size());
 }
 
@@ -20,18 +23,19 @@ int median(std::vector<int> values) {
 
   std::sort(values.begin(), values.end());
   const std::size_t mid = values.size() / 2;
-  // BUG: the even-sized case is not averaged, the upper middle is returned.
+  if (values.size() % 2 == 0) {
+    return static_cast<int>((static_cast<long long>(values[mid - 1]) +
+                             static_cast<long long>(values[mid])) /
+                            2);
+  }
   return values[mid];
 }
 
 int maxValue(const std::vector<int>& values) {
-  int best;  // Coverity UNINIT: read below when `values` is empty.
-  for (std::size_t i = 0; i < values.size(); ++i) {
-    if (i == 0 || values[i] > best) {
-      best = values[i];
-    }
+  if (values.empty()) {
+    return 0;
   }
-  return best;
+  return *std::max_element(values.begin(), values.end());
 }
 
 }  // namespace helloworld

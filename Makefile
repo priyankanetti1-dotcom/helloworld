@@ -1,8 +1,9 @@
 # ---------------------------------------------------------------------------
 # Toolchain
 # ---------------------------------------------------------------------------
-# GCC_HOME can be overridden (e.g. GCC_HOME=/usr) or CXX can be set directly.
-GCC_HOME ?= /depot/gcc-13.3.0
+# Use the standard Ubuntu developer toolchain by default, while still allowing
+# overrides like GCC_HOME=/usr/local or CXX=/usr/bin/clang++.
+GCC_HOME ?= /usr
 
 ifneq ($(wildcard $(GCC_HOME)/bin/g++),)
   # Only take over CXX when it still holds make's built-in default.
@@ -12,9 +13,10 @@ ifneq ($(wildcard $(GCC_HOME)/bin/g++),)
   ifeq ($(origin CC),default)
     CC := $(GCC_HOME)/bin/gcc
   endif
-  # The depot libstdc++ is newer than the system one; find it at runtime.
   GCC_LIBDIR := $(firstword $(wildcard $(GCC_HOME)/lib64 $(GCC_HOME)/lib))
-  LDFLAGS += -L$(GCC_LIBDIR) -Wl,-rpath,$(GCC_LIBDIR)
+  ifneq ($(GCC_LIBDIR),)
+    LDFLAGS += -L$(GCC_LIBDIR) -Wl,-rpath,$(GCC_LIBDIR)
+  endif
 endif
 
 AR       ?= ar

@@ -8,5 +8,5 @@ compiler.cppstd=17
 compiler.libcxx=libstdc++11
 
 [conf]
-tools.build:compiler_executables={"c": "/depot/gcc-13.3.0/bin/gcc", "cpp": "/depot/gcc-13.3.0/bin/g++"}
+tools.build:compiler_executables={"c": "/usr/bin/gcc", "cpp": "/usr/bin/g++"}
 tools.build:cxxflags=["-D_GLIBCXX_USE_CXX11_ABI=1"]

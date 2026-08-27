@@ -14,7 +14,7 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-PYTHON_BIN="${PYTHON_BIN:-/depot/Python/Python-3.11.2/bin/python3}"
+PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 2>/dev/null || echo /usr/bin/python3)}"
 VENV_DIR="${VENV_DIR:-$REPO_ROOT/.venv}"
 CONAN_VERSION="${CONAN_VERSION:-2.22.0}"
 CONAN_PROFILE="${CONAN_PROFILE:-./conan/profiles/gcc13}"

@@ -10,14 +10,13 @@ permissions:
   contents: read
 
 env:
-  PYTHON_BIN: /depot/Python/Python-3.11.2/bin/python3
   CONAN_VERSION: "2.22.0"
   CONAN_PROFILE: ./conan/profiles/gcc13
 
 jobs:
   build-and-test:
     name: Conan build (GNU make) and gtest
-    runs-on: sre-agent
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out sources
@@ -26,14 +25,13 @@ jobs:
       - name: Create Python virtualenv
         run: |
           set -eux
-          "$PYTHON_BIN" --version
-          "$PYTHON_BIN" -m venv "$GITHUB_WORKSPACE/.venv"
+          python3 --version
+          python3 -m venv "$GITHUB_WORKSPACE/.venv"
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install Conan
         run: |
           set -eux
-          which python
           python -m pip install --upgrade pip
           python -m pip install "conan==$CONAN_VERSION"
           conan --version
@@ -71,7 +69,7 @@ jobs:
 
   cleanup:
     name: Clean up workspace
-    runs-on: sre-agent
+    runs-on: ubuntu-latest
     needs: [build-and-test]
     if: always()
 

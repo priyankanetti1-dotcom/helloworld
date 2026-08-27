@@ -16,8 +16,7 @@ const std::string& Greeter::name() const { return name_; }
 
 std::string Greeter::greet() const {
   ++greetCount_;
-  // BUG: the trailing exclamation mark is missing.
-  return "Hello, " + name_;
+  return "Hello, " + name_ + "!";
 }
 
 int Greeter::greetCount() const { return greetCount_; }

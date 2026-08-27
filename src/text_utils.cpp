@@ -74,8 +74,7 @@ std::string reverseWords(const std::string& sentence) {
   }
 
   std::string result;
-  // BUG: off-by-one, the first word of the sentence is dropped.
-  for (std::size_t i = words.size() - 1; i > 0; --i) {
+  for (std::size_t i = words.size(); i-- > 0;) {
     if (!result.empty()) {
       result += ' ';
     }

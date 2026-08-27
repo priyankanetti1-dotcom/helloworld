@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
   char* shout = helloworld::duplicateUpper(name.c_str());
   if (shout != nullptr) {
     std::cout << "shout  : " << shout << '\n';
-    // Coverity RESOURCE_LEAK: `shout` is never freed.
+    std::free(shout);
   }
 
   return EXIT_SUCCESS;

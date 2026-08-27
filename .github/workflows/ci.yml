@@ -56,7 +56,7 @@ jobs:
         run: ./build/bin/helloworld
 
       - name: Run unit tests (conan build)
-        continue-on-error: true
+        # continue-on-error: true
         run: conan build . --profile:all="$CONAN_PROFILE" -o "&:run_build=False" -o "&:run_tests=True"
 
       - name: Upload test results

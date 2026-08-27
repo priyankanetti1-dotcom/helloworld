@@ -18,31 +18,34 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
  
-      - name: Get SRE Agent token
+      - name: Call SRE Agent trigger
+        env:
+          SRE_TRIGGER_URL: ${{ secrets.SRE_TRIGGER_URL }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          CONCLUSION: ${{ job.status }}
         run: |
           TOKEN="$(az account get-access-token \
             --resource 59f0a04a-b322-4310-adc9-39ac41e9631e \
             --query accessToken -o tsv)"
           test -n "$TOKEN"
-          echo "SRE Agent token acquired."
 
-      - name: Call SRE Agent trigger
-        env:
-          SRE_TRIGGER_URL: ${{ secrets.SRE_TRIGGER_URL }}
-        run: |
-          TOKEN="$(az account get-access-token \
-            --resource 59f0a04a-b322-4310-adc9-39ac41e9631e \
-            --query accessToken -o tsv)"
- 
+          payload="$(jq -cn \
+            --arg repository "$REPOSITORY" \
+            --arg workflow "$WORKFLOW" \
+            --arg run_id "$RUN_ID" \
+            --arg run_url "$RUN_URL" \
+            --arg branch "$BRANCH" \
+            --arg sha "$SHA" \
+            --arg conclusion "$CONCLUSION" \
+            '{repository: $repository, workflow: $workflow, run_id: $run_id, run_url: $run_url, branch: $branch, sha: $sha, conclusion: $conclusion}')"
+
           curl --fail-with-body --silent --show-error \
             -X POST "$SRE_TRIGGER_URL" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{
-              "repository": "priyankanetti1-dotcom/helloworld",
-              "workflow": "authentication-test",
-              "run_id": "manual-test",
-              "branch": "main",
-              "sha": "manual-test",
-              "conclusion": "test"
-            }'
+            --data "$payload"

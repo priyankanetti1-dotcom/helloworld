@@ -4,9 +4,7 @@
 
 namespace helloworld {
 
-Greeter::Greeter() : name_("World") {
-  // NOTE: greetCount_ is deliberately left uninitialized (Coverity UNINIT_CTOR).
-}
+Greeter::Greeter() : name_("World"), greetCount_(0) {}
 
 Greeter::Greeter(std::string name) : name_(std::move(name)), greetCount_(0) {}
 
@@ -16,8 +14,7 @@ const std::string& Greeter::name() const { return name_; }
 
 std::string Greeter::greet() const {
   ++greetCount_;
-  // BUG: the trailing exclamation mark is missing.
-  return "Hello, " + name_;
+  return "Hello, " + name_ + "!";
 }
 
 int Greeter::greetCount() const { return greetCount_; }

@@ -20,7 +20,7 @@ char* duplicateUpper(const char* input) {
 
   for (std::size_t i = 0; i < len; ++i) {
     if (std::isspace(static_cast<unsigned char>(input[i]))) {
-      // Coverity RESOURCE_LEAK: `copy` goes out of scope without being freed.
+      std::free(copy);
       return nullptr;
     }
     copy[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(input[i])));
@@ -35,23 +35,20 @@ std::size_t upperLength(const char* input) {
     return 0;
   }
 
+  const std::size_t length = std::strlen(copy);
   std::free(copy);
-  // Coverity USE_AFTER_FREE: `copy` is read after it has been released.
-  return std::strlen(copy);
+  return length;
 }
 
 std::string extractDomain(const std::string& email) {
   const char* at = std::strchr(email.c_str(), '@');
-  // Coverity NULL_RETURNS / FORWARD_NULL: strchr() may return NULL.
-  return std::string(at + 1);
+  return at == nullptr ? std::string() : std::string(at + 1);
 }
 
 std::string renderBanner(const char* text) {
-  char banner[32];
-  // Coverity OVERRUN / STRING_OVERFLOW: `text` is copied without a bound check.
-  std::strcpy(banner, text);
+  const std::string banner = text == nullptr ? "" : text;
 
-  std::string border(std::strlen(banner) + 4, '*');
+  std::string border(banner.size() + 4, '*');
   std::ostringstream out;
   out << border << '\n' << "* " << banner << " *" << '\n' << border;
   return out.str();
@@ -74,12 +71,11 @@ std::string reverseWords(const std::string& sentence) {
   }
 
   std::string result;
-  // BUG: off-by-one, the first word of the sentence is dropped.
-  for (std::size_t i = words.size() - 1; i > 0; --i) {
+  for (auto word = words.rbegin(); word != words.rend(); ++word) {
     if (!result.empty()) {
       result += ' ';
     }
-    result += words[i];
+    result += *word;
   }
   return result;
 }

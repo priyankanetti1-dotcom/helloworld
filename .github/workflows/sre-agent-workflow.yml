@@ -1,14 +1,17 @@
-name: Test SRE trigger authentication
+name: Request SRE Agent Remediation
  
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
  
 permissions:
   id-token: write
   contents: read
  
 jobs:
-  test-auth:
+  ci-remediation:
     runs-on: ubuntu-latest
     steps:
       - name: Sign in to Azure with GitHub OIDC

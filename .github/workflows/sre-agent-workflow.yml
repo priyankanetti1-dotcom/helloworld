@@ -1,0 +1,48 @@
+name: Test SRE trigger authentication
+ 
+on:
+  workflow_dispatch:
+ 
+permissions:
+  id-token: write
+  contents: read
+ 
+jobs:
+  test-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sign in to Azure with GitHub OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+ 
+      - name: Get SRE Agent token
+        run: |
+          TOKEN="$(az account get-access-token \
+            --resource 59f0a04a-b322-4310-adc9-39ac41e9631e \
+            --query accessToken -o tsv)"
+          test -n "$TOKEN"
+          echo "SRE Agent token acquired."
+
+      - name: Call SRE Agent trigger
+        env:
+          SRE_TRIGGER_URL: ${{ secrets.SRE_TRIGGER_URL }}
+        run: |
+          TOKEN="$(az account get-access-token \
+            --resource 59f0a04a-b322-4310-adc9-39ac41e9631e \
+            --query accessToken -o tsv)"
+ 
+          curl --fail-with-body --silent --show-error \
+            -X POST "$SRE_TRIGGER_URL" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repository": "priyankanetti1-dotcom/helloworld",
+              "workflow": "authentication-test",
+              "run_id": "manual-test",
+              "branch": "main",
+              "sha": "manual-test",
+              "conclusion": "test"
+            }'

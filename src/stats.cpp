@@ -20,7 +20,9 @@ int median(std::vector<int> values) {
 
   std::sort(values.begin(), values.end());
   const std::size_t mid = values.size() / 2;
-  // BUG: the even-sized case is not averaged, the upper middle is returned.
+  if (values.size() % 2 == 0) {
+    return (values[mid - 1] + values[mid]) / 2;
+  }
   return values[mid];
 }
 

@@ -11,8 +11,12 @@ permissions:
   contents: read
  
 jobs:
-  ci-remediation:
+  request-remediation:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      !startsWith(github.event.workflow_run.head_branch, 'sre-agent/')
     runs-on: ubuntu-latest
+ 
     steps:
       - name: Sign in to Azure with GitHub OIDC
         uses: azure/login@v2
@@ -21,23 +25,22 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
  
-      - name: Call SRE Agent trigger
+      - name: Request CI remediation
         env:
           SRE_TRIGGER_URL: ${{ secrets.SRE_TRIGGER_URL }}
           REPOSITORY: ${{ github.repository }}
-          WORKFLOW: ${{ github.workflow }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          BRANCH: ${{ github.ref_name }}
-          SHA: ${{ github.sha }}
-          CONCLUSION: ${{ job.status }}
+          WORKFLOW: ${{ github.event.workflow_run.name }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: |
           TOKEN="$(az account get-access-token \
             --resource 59f0a04a-b322-4310-adc9-39ac41e9631e \
             --query accessToken -o tsv)"
-          test -n "$TOKEN"
-
-          payload="$(jq -cn \
+ 
+          jq -n \
             --arg repository "$REPOSITORY" \
             --arg workflow "$WORKFLOW" \
             --arg run_id "$RUN_ID" \
@@ -45,10 +48,11 @@ jobs:
             --arg branch "$BRANCH" \
             --arg sha "$SHA" \
             --arg conclusion "$CONCLUSION" \
-            '{repository: $repository, workflow: $workflow, run_id: $run_id, run_url: $run_url, branch: $branch, sha: $sha, conclusion: $conclusion}')"
-
-          curl --fail-with-body --silent --show-error \
-            -X POST "$SRE_TRIGGER_URL" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "$payload"
+            '{repository: $repository, workflow: $workflow, run_id: $run_id,
+              run_url: $run_url, branch: $branch, sha: $sha,
+              conclusion: $conclusion}' \
+          | curl --fail-with-body --silent --show-error \
+              -X POST "$SRE_TRIGGER_URL" \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-binary @-
